@@ -5,4 +5,4 @@ DataLife Engine
 Для установки модуля скачайте все файлы.
 Далее следуйте прилагаемой инструкции.
 
-Поддержка версии CMS DataLife Engine 11.1 (модуль Billing 0.6)
+Поддержка версии CMS DataLife Engine 14.3 - Billing 0.7.2

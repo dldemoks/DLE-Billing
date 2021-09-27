@@ -9,7 +9,7 @@
 =====================================================
 */
 
-Class PAYSYS
+Class Payeer
 {
 	var $doc = "https://payeer.com";
 	
@@ -19,11 +19,11 @@ Class PAYSYS
 
 		if (empty($config['merchant_url']))
 		{
-			$Form[] = array("URL мерчанта", "URL для оплаты заказа (по умолчанию, https://payeer.com/merchant/)", "<input name=\"save_con[merchant_url]\" class=\"edit bk\" type=\"text\" value=\"https://payeer.com/merchant/\">" );
+			$Form[] = array("URL мерчанта", "URL для оплаты заказа (по умолчанию, https://payeer.com/merchant/)", "<input name=\"save_con[merchant_url]\" class=\"edit bk\" type=\"text\" value=\"https://payeer.com/merchant/\">");
 		}
 		else
 		{
-			$Form[] = array("URL мерчанта", "URL для оплаты заказа (по умолчанию, https://payeer.com/merchant/)", "<input name=\"save_con[merchant_url]\" class=\"edit bk\" type=\"text\" value=\"" . $config['merchant_url'] ."\">" );
+			$Form[] = array("URL мерчанта", "URL для оплаты заказа (по умолчанию, https://payeer.com/merchant/)", "<input name=\"save_con[merchant_url]\" class=\"edit bk\" type=\"text\" value=\"" . $config['merchant_url'] ."\">");
 		}
 		
 		$Form[] = array("Идентификатор магазина", "Идентификатор магазина, зарегистрированного в Payeer", "<input name=\"save_con[merchant_id]\" class=\"edit bk\" type=\"text\" value=\"" . $config['merchant_id'] ."\">" );
@@ -35,7 +35,7 @@ Class PAYSYS
 		return $Form;
 	}
 
-	function form($id, $config, $invoice, $currency, $desc) 
+	function Form($id, $config, $invoice, $desc, $DevTools)
 	{
 		$m_url = $config['merchant_url'];
 		$m_shop = $config['merchant_id'];
@@ -71,32 +71,32 @@ Class PAYSYS
 			</form>';
 	}
 	
-	function check_id($DATA) 
+	function check_id($data) 
 	{
-		return $DATA["m_orderid"];
+		return $data["m_orderid"];
 	}
 	
-	function check_ok($DATA) 
+	function check_ok($data) 
 	{
-		return $DATA['m_orderid'] . '|success';
+		return $data['m_orderid'] . '|success';
 	}
 	
-	function check_out($DATA, $CONFIG, $INVOICE) 
+	function check_out($data, $config, $invoice) 
 	{
 		$log_text = "--------------------------------------------------------\n".
-			"operation id       " . $DATA["m_operation_id"] . "\n".
-			"operation ps       " . $DATA["m_operation_ps"] . "\n".
-			"operation date     " . $DATA["m_operation_date"] . "\n".
-			"operation pay date " . $DATA["m_operation_pay_date"] . "\n".
-			"shop               " . $DATA["m_shop"] . "\n".
-			"order id           " . $DATA['m_orderid'] . "\n".
-			"amount             " . $DATA["m_amount"] . "\n".
-			"currency           " . $DATA["m_curr"] . "\n".
-			"description        " . base64_decode($DATA["m_desc"]) . "\n".
-			"status             " . $DATA["m_status"] . "\n".
-			"sign               " . $DATA["m_sign"] . "\n\n";
+			"operation id       " . $data["m_operation_id"] . "\n".
+			"operation ps       " . $data["m_operation_ps"] . "\n".
+			"operation date     " . $data["m_operation_date"] . "\n".
+			"operation pay date " . $data["m_operation_pay_date"] . "\n".
+			"shop               " . $data["m_shop"] . "\n".
+			"order id           " . $data['m_orderid'] . "\n".
+			"amount             " . $data["m_amount"] . "\n".
+			"currency           " . $data["m_curr"] . "\n".
+			"description        " . base64_decode($data["m_desc"]) . "\n".
+			"status             " . $data["m_status"] . "\n".
+			"sign               " . $data["m_sign"] . "\n\n";
 
-		$log_file = $CONFIG['log_file'];
+		$log_file = $config['log_file'];
 		
 		if (!empty($log_file))
 		{
@@ -106,21 +106,21 @@ Class PAYSYS
 		// проверка цифровой подписи и ip
 
 		$sign_hash = strtoupper(hash('sha256', implode(":", array(
-			$DATA['m_operation_id'],
-			$DATA['m_operation_ps'],
-			$DATA['m_operation_date'],
-			$DATA['m_operation_pay_date'],
-			$DATA['m_shop'],
-			$DATA['m_orderid'],
-			$DATA['m_amount'],
-			$DATA['m_curr'],
-			$DATA['m_desc'],
-			$DATA['m_status'],
-			$CONFIG['secret_key']
+			$data['m_operation_id'],
+			$data['m_operation_ps'],
+			$data['m_operation_date'],
+			$data['m_operation_pay_date'],
+			$data['m_shop'],
+			$data['m_orderid'],
+			$data['m_amount'],
+			$data['m_curr'],
+			$data['m_desc'],
+			$data['m_status'],
+			$config['secret_key']
 		))));
 		
 		$valid_ip = true;
-		$sIP = str_replace(' ', '', $CONFIG['ip_filter']);
+		$sIP = str_replace(' ', '', $config['ip_filter']);
 		
 		if (!empty($sIP))
 		{
@@ -142,13 +142,13 @@ Class PAYSYS
 			$err = true;
 		}
 
-		if ($DATA["m_sign"] != $sign_hash)
+		if ($data["m_sign"] != $sign_hash)
 		{
 			$message .= " - не совпадают цифровые подписи\n";
 			$err = true;
 		}
 		
-		if ($DATA['m_status'] != 'success')
+		if ($data['m_status'] != 'success')
 		{
 			$message .= " - статус платежа не является success\n";
 			$err = true;
@@ -156,7 +156,7 @@ Class PAYSYS
 
 		if ($err)
 		{
-			$to = $CONFIG['email_error'];
+			$to = $config['email_error'];
 
 			if (!empty($to))
 			{
@@ -166,7 +166,7 @@ Class PAYSYS
 				mail($to, 'Ошибка оплаты', $message, $headers);
 			}
 			
-			return $DATA['m_orderid'] . '|error';
+			return $data['m_orderid'] . '|error';
 		}
 		else
 		{
@@ -175,5 +175,5 @@ Class PAYSYS
 	}
 }
 
-$Paysys = new PAYSYS;
+$Paysys = new Payeer;
 ?>
